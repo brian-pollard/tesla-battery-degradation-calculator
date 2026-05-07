@@ -4,6 +4,26 @@ This document captures the calculation methodology and design decisions for the 
 
 ---
 
+## Project Relationship
+
+This calculator is a **public-facing child project** of the private battery tracking project at:
+
+```
+/home/shared/info/Work/AI Projects/Tesla Model 3 Battery Tracker
+```
+
+**Parent project purpose:** Longitudinal tracking of a specific 2018 Tesla Model 3 Performance (75 kWh, 310 mi original range) across repeated charge cycles, building an observed capacity dataset to support a formal Tesla warranty review before expiration in August 2026. The tracker is an Excel workbook (`Tesla_M3P_Battery_Tracker_Final.xlsx`) with a Cycle_Log sheet (user-entered columns A–K, formula columns L–W) and a Summary sheet formatted for Tesla review.
+
+**Relationship:** The calculator's three methods (BMS Display, Observed, Drive-Adjusted) and all formulas are directly derived from and must remain consistent with the formulas defined in the parent project's `CALCULATIONS.md`. The vehicle database includes the parent vehicle (m3p_2018) as a first-class entry. Changes to calculation methodology in either project should be reflected in both.
+
+**Parent project key files to be aware of:**
+- `CALCULATIONS.md` — authoritative formula definitions
+- `WARRANTY_CONTEXT.md` — vehicle specs, warranty terms, key findings
+- `REBUILD.md` — workbook rebuild guide
+- `Tesla_M3P_Battery_Tracker_Final.xlsx` — the live data tracker
+
+---
+
 ## What the Tool Does
 
 Estimates a Tesla battery's usable capacity from data the driver reads off the vehicle's own displays — no OBD-II adapter or third-party hardware needed. Produces three estimates and shows a color-coded battery stack breakdown.
