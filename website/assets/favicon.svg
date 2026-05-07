@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="none">
+  <rect width="36" height="36" rx="8" fill="#0f172a"/>
+  <defs>
+    <linearGradient id="bjp" x1="9" y1="8" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#3b82f6"/>
+    </linearGradient>
+  </defs>
+  <!-- Vertical stroke -->
+  <rect x="9" y="8" width="4" height="20" rx="1.5" fill="url(#bjp)"/>
+  <!-- Top bar -->
+  <rect x="9" y="8" width="12" height="4" rx="1.5" fill="url(#bjp)"/>
+  <!-- Mid bar -->
+  <rect x="9" y="16" width="11" height="4" rx="1.5" fill="url(#bjp)"/>
+  <!-- Bottom bar -->
+  <rect x="9" y="24" width="13" height="4" rx="1.5" fill="url(#bjp)"/>
+  <!-- Upper bump -->
+  <rect x="20" y="8" width="4" height="8" rx="1.5" fill="url(#bjp)"/>
+  <!-- Lower bump -->
+  <rect x="21" y="16" width="4" height="12" rx="1.5" fill="url(#bjp)"/>
+</svg>

@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLMLRDRW7Z"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FLMLRDRW7Z');
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tesla Battery Degradation Calculator — Brian J. Pollard</title>
+<meta name="description" content="Free Tesla battery degradation calculator — estimate your true usable pack capacity from real-world charge cycle data using your car's own displays. No third-party hardware needed." />
+<style>
+:root {
+  --navy: #0B1E3D;
+  --bg: #0d1117;
+  --surface: #161b27;
+  --surface2: #1e2538;
+  --surface3: #252d42;
+  --border: #2a3355;
+  --text: #e6eaf5;
+  --text2: #7a8ab5;
+  --text3: #4a5a80;
+  --accent: #e31937;
+  --accent-dim: #8a0f20;
+  --green: #5db84a;
+  --green-dim: #2a5a1f;
+  --blue: #4a8fd4;
+  --blue-dim: #1e3f70;
+  --yellow: #d4a017;
+  --yellow-dim: #5c4500;
+  --gray: #7a8498;
+  --gray-dim: #3a4060;
+  --red: #e03535;
+  --red-dim: #5a1515;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  background: var(--navy);
+  padding: 0 2rem;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.header-brand:hover { opacity: 0.85; }
+.header-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.header-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.header-brand-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.header-brand-tagline {
+  color: rgba(255,255,255,0.45);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.header-tag   { color:rgba(255,255,255,.4); font-size:11.5px; }
+.header-back  { color:rgba(255,255,255,0.6); font-size:12px; font-weight:500; text-decoration:none; transition:color .15s; border:1px solid rgba(255,255,255,0.2); border-radius:20px; padding:3px 12px; }
+.header-back:hover { color:#fff; border-color:rgba(255,255,255,0.5); }
+@media (max-width:600px) { .header-tag { display:none; } }
+
+/* ── Tabs ── */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 16px 24px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.tab {
+  padding: 10px 22px;
+  border: none;
+  background: transparent;
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+  border-radius: 6px 6px 0 0;
+}
+
+.tab:hover { color: var(--text); }
+
+.tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: rgba(227,25,55,0.06);
+}
+
+/* ── Main layout ── */
+.main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 20px 60px;
+}
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── Cards ── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.card-header h2 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── Vehicle selector ── */
+.vehicle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.vehicle-info-chips {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.chip {
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip-label { color: var(--text2); font-size: 12px; }
+.chip-val { font-weight: 600; color: var(--text); }
+
+/* ── Inputs ── */
+.input-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.input-group.full { grid-column: 1 / -1; }
+
+.input-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tooltip-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tooltip-icon {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--surface3);
+  border: 1px solid var(--border);
+  color: var(--text3);
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.tooltip-box {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e2a4a;
+  border: 1px solid var(--blue);
+  border-radius: 8px;
+  padding: 10px 13px;
+  width: 240px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1.5;
+  z-index: 100;
+  text-transform: none;
+  letter-spacing: 0;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+
+.tooltip-box::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--blue);
+}
+
+.tooltip-trigger:hover .tooltip-box { display: block; }
+
+input[type="number"], select {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 15px;
+  padding: 9px 13px;
+  outline: none;
+  transition: border-color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+input[type="number"]:focus, select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(227,25,55,0.12);
+}
+
+input[type="number"]::placeholder { color: var(--text3); }
+
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a8ab5' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px;
+  cursor: pointer;
+}
+
+select option { background: #1a2038; }
+
+.input-hint {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.optional-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  user-select: none;
+}
+
+.optional-toggle:hover { color: var(--text); }
+.toggle-arrow { transition: transform 0.2s; }
+.toggle-arrow.open { transform: rotate(90deg); }
+
+.optional-section {
+  display: none;
+  padding-top: 12px;
+}
+.optional-section.open { display: block; }
+
+.optional-note {
+  background: rgba(74,143,212,0.1);
+  border: 1px solid rgba(74,143,212,0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--blue);
+  margin-bottom: 14px;
+  line-height: 1.5;
+}
+
+/* ── Calculate button ── */
+.calc-btn {
+  width: 100%;
+  padding: 14px;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.3px;
+  margin-top: 4px;
+}
+
+.calc-btn:hover { background: #c8142f; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(227,25,55,0.35); }
+.calc-btn:active { transform: translateY(0); }
+
+.error-msg {
+  display: none;
+  background: rgba(224,53,53,0.1);
+  border: 1px solid rgba(224,53,53,0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ff7070;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+/* ── Results section ── */
+#results {
+  display: none;
+  animation: slideIn 0.4s ease;
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hero metrics ── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-card.primary {
+  grid-column: 1;
+  background: linear-gradient(135deg, var(--surface) 0%, #1a2035 100%);
+  border-color: var(--accent);
+}
+
+.hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.hero-card.original::before { background: var(--text3); }
+.hero-card.remaining::before { background: var(--green); }
+.hero-card.percentage::before { background: var(--accent); }
+
+.hero-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text2);
+  margin-bottom: 10px;
+}
+
+.hero-value {
+  font-size: 38px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.hero-value .unit {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--text2);
+}
+
+.hero-sub {
+  font-size: 12px;
+  color: var(--text2);
+}
+
+/* ── Battery gauge ── */
+.gauge-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+
+.gauge-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text2);
+  margin-bottom: 18px;
+}
+
+.gauge-bar-wrap {
+  position: relative;
+  height: 52px;
+  background: var(--surface2);
+  border-radius: 8px;
+  overflow: visible;
+  border: 1px solid var(--border);
+}
+
+.gauge-bg {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.gauge-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 12px;
+}
+
+.gauge-fill-pct {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.gauge-threshold-line {
+  position: absolute;
+  top: -8px;
+  bottom: -8px;
+  width: 2px;
+  background: var(--yellow);
+  z-index: 10;
+}
+
+.gauge-threshold-label {
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--yellow);
+  white-space: nowrap;
+  background: var(--bg);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.gauge-scale {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0 0;
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.warranty-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.warranty-status.pass {
+  background: rgba(93,184,74,0.1);
+  border: 1px solid rgba(93,184,74,0.3);
+  color: var(--green);
+}
+
+.warranty-status.fail {
+  background: rgba(224,53,53,0.1);
+  border: 1px solid rgba(224,53,53,0.3);
+  color: var(--red);
+}
+
+.warranty-status.warn {
+  background: rgba(212,160,23,0.1);
+  border: 1px solid rgba(212,160,23,0.3);
+  color: var(--yellow);
+}
+
+.status-icon { font-size: 18px; }
+
+/* ── Methods comparison ── */
+.methods-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.method-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.method-card.primary-method {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(227,25,55,0.2);
+}
+
+.method-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fff;
+}
+
+.method-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  margin-bottom: 4px;
+  padding-right: 60px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.method-desc {
+  font-size: 11px;
+  color: var(--text3);
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.method-kwh {
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.method-kwh .unit { font-size: 16px; font-weight: 500; color: var(--text2); }
+
+.method-pct {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.method-bar {
+  height: 6px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.method-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+.method-threshold-note {
+  font-size: 11px;
+  color: var(--text3);
+}
+
+.method-na {
+  font-size: 15px;
+  color: var(--text3);
+  font-style: italic;
+  padding: 20px 0;
+}
+
+/* ── Battery stack ── */
+.stack-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  margin-bottom: 16px;
+}
+
+.stack-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.stack-subtitle {
+  font-size: 12px;
+  color: var(--text2);
+  margin-bottom: 20px;
+}
+
+.stack-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* Vertical battery visual */
+.battery-visual {
+  flex-shrink: 0;
+  width: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.battery-outer {
+  width: 60px;
+  height: 220px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  position: relative;
+  background: var(--surface2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.battery-terminal {
+  width: 24px;
+  height: 8px;
+  background: var(--border);
+  border-radius: 4px 4px 0 0;
+  margin: 0 auto;
+  margin-bottom: -2px;
+}
+
+.battery-segment {
+  width: 100%;
+  transition: height 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.battery-label {
+  font-size: 10px;
+  color: var(--text2);
+  text-align: center;
+}
+
+/* Stack legend / breakdown */
+.stack-breakdown {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stack-row {
+  display: grid;
+  grid-template-columns: 14px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.stack-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.stack-component-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stack-component-sub {
+  font-size: 11px;
+  color: var(--text3);
+  margin-left: 7px;
+}
+
+.stack-kwh {
+  font-size: 15px;
+  font-weight: 700;
+  text-align: right;
+  min-width: 52px;
+}
+
+.stack-pct {
+  font-size: 12px;
+  color: var(--text2);
+  text-align: right;
+  min-width: 40px;
+}
+
+.stack-bar-row {
+  height: 5px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+  grid-column: 2 / -1;
+  margin-top: -4px;
+}
+
+.stack-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+}
+
+.stack-total-row {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stack-total-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.stack-total-val {
+  font-size: 16px;
+  font-weight: 800;
+}
+
+/* Cycle validity note */
+.validity-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(212,160,23,0.1);
+  border: 1px solid rgba(212,160,23,0.25);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--yellow);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+/* ── How It Works tab ── */
+.how-section {
+  margin-bottom: 20px;
+}
+
+.how-section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+.how-section p, .how-section li {
+  font-size: 14px;
+  color: var(--text2);
+  line-height: 1.7;
+  margin-bottom: 8px;
+}
+
+.how-section ul { padding-left: 18px; }
+
+.formula-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  color: var(--blue);
+  margin: 10px 0;
+  line-height: 1.8;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin: 12px 0;
+}
+
+.data-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--surface3);
+  color: var(--text2);
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.data-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.data-table tr:last-child td { border-bottom: none; }
+
+.color-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+/* ── Cycle quality indicator ── */
+.cycle-quality {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+.cycle-quality.good {
+  background: rgba(93,184,74,0.1);
+  border: 1px solid rgba(93,184,74,0.2);
+  color: var(--green);
+}
+
+.cycle-quality.ok {
+  background: rgba(212,160,23,0.1);
+  border: 1px solid rgba(212,160,23,0.2);
+  color: var(--yellow);
+}
+
+.cycle-quality.poor {
+  background: rgba(224,53,53,0.1);
+  border: 1px solid rgba(224,53,53,0.2);
+  color: var(--red);
+}
+
+/* ── Responsive ── */
+@media (max-width: 700px) {
+  .vehicle-grid, .input-grid, .hero-grid, .methods-grid { grid-template-columns: 1fr; }
+  .input-group.full { grid-column: auto; }
+  .hero-value { font-size: 28px; }
+  .method-kwh { font-size: 26px; }
+  .stack-wrapper { flex-direction: column; }
+  .battery-visual { width: 100%; flex-direction: row; gap: 16px; align-items: center; }
+  .battery-outer { width: 40px; height: 140px; }
+}
+
+/* ── Divider ── */
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px 0 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text3);
+}
+
+.section-divider::before, .section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <a href="https://brianjpollard.com" class="header-brand">
+    <img src="assets/favicon.svg" class="header-logo" alt="B" />
+    <div class="header-brand-text">
+      <span class="header-brand-name">Brian J. Pollard</span>
+      <span class="header-brand-tagline">AI-Built Project</span>
+    </div>
+  </a>
+  <div class="header-right">
+    <span class="header-tag">Tesla Battery Tools · 2026</span>
+    <a href="https://brianjpollard.com/portfolio.html" class="header-back">← Portfolio</a>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('calculator')">Calculator</button>
+  <button class="tab" onclick="switchTab('howto')">How It Works</button>
+</div>
+
+<div class="main">
+
+  <!-- ── CALCULATOR TAB ── -->
+  <div id="tab-calculator" class="tab-pane active">
+
+    <!-- Step 1: Vehicle -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">1</div>
+        <h2>Select Your Vehicle</h2>
+      </div>
+      <div class="vehicle-grid">
+        <div class="input-group">
+          <label class="input-label">Model</label>
+          <select id="vehicleSelect" onchange="onVehicleChange()">
+            <optgroup label="Model 3">
+              <option value="m3p_2018">Model 3 Performance (2018–2022) — 75 kWh / 310 mi</option>
+              <option value="m3lr_awd">Model 3 Long Range AWD (2017–2022) — 75 kWh / 353 mi</option>
+              <option value="m3lr_rwd">Model 3 Long Range RWD (2019–2020) — 75 kWh / 322 mi</option>
+              <option value="m3sr">Model 3 Standard Range+ (2019–2021) — 54 kWh / 240 mi</option>
+              <option value="m3rwd23">Model 3 RWD (2023+) — 60 kWh / 272 mi</option>
+            </optgroup>
+            <optgroup label="Model Y">
+              <option value="mylr">Model Y Long Range (2020+) — 75 kWh / 330 mi</option>
+              <option value="myp">Model Y Performance (2020+) — 75 kWh / 303 mi</option>
+            </optgroup>
+            <optgroup label="Model S">
+              <option value="ms85">Model S 85 (2012–2015) — 85 kWh / 265 mi</option>
+              <option value="ms100">Model S 100D (2016–2019) — 100 kWh / 335 mi</option>
+              <option value="mslrp">Model S Long Range Plus (2020+) — 100 kWh / 405 mi</option>
+              <option value="msplaid">Model S Plaid (2021+) — 100 kWh / 396 mi</option>
+            </optgroup>
+            <optgroup label="Model X">
+              <option value="mx100">Model X 100D (2016–2018) — 100 kWh / 295 mi</option>
+              <option value="mxlrp">Model X Long Range (2019+) — 100 kWh / 371 mi</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="custom">Custom / Enter manually</option>
+            </optgroup>
+          </select>
+        </div>
+        <div id="customFields" style="display:none;" class="vehicle-grid" style="grid-column:2;gap:12px;">
+          <div class="input-group">
+            <label class="input-label">Nominal Pack Size (kWh)</label>
+            <input type="number" id="customPack" placeholder="e.g. 75" min="10" max="200" step="0.1">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Original EPA Range (miles)</label>
+            <input type="number" id="customRange" placeholder="e.g. 310" min="50" max="700" step="1">
+          </div>
+        </div>
+      </div>
+      <div class="vehicle-info-chips" id="vehicleChips">
+        <div class="chip"><span class="chip-label">Nominal Pack</span>&nbsp;<span class="chip-val" id="chipPack">75 kWh</span></div>
+        <div class="chip"><span class="chip-label">Original Range</span>&nbsp;<span class="chip-val" id="chipRange">310 mi</span></div>
+        <div class="chip"><span class="chip-label">Warranty Min (70%)</span>&nbsp;<span class="chip-val" id="chipWarranty">52.5 kWh</span></div>
+        <div class="chip"><span class="chip-label">Factory Efficiency</span>&nbsp;<span class="chip-val" id="chipEfficiency">242 Wh/mi</span></div>
+      </div>
+    </div>
+
+    <!-- Step 2: Inputs -->
+    <div class="card">
+      <div class="card-header">
+        <div class="step-badge">2</div>
+        <h2>Enter This Cycle's Data</h2>
+      </div>
+
+      <div class="section-divider">From Previous Charge</div>
+      <div class="input-grid" style="margin-bottom:16px;">
+        <div class="input-group full">
+          <label class="input-label">
+            Previous Charge End SOC %
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">The battery percentage shown <strong>after your previous charge completed</strong>. For example, if you charged to 90% last time, enter 90. This is used to calculate the SOC window — how much of the battery was consumed between charges.</span>
+            </span>
+          </label>
+          <input type="number" id="prevEndSOC" placeholder="e.g. 90" min="0" max="100" step="1">
+          <span class="input-hint">Battery % shown after your last charge finished</span>
+        </div>
+      </div>
+
+      <div class="section-divider">At the Charger — Before Plugging In</div>
+      <div class="input-grid" style="margin-bottom:16px;">
+        <div class="input-group">
+          <label class="input-label">
+            Miles Driven Since Last Charge
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Total <strong>miles driven since your last charge</strong>. Read this from the Energy app before you plug in — tap "Since last charge." This is the odometer distance, not estimated range.</span>
+            </span>
+          </label>
+          <input type="number" id="milesDriven" placeholder="e.g. 185" min="0" max="2000" step="0.1">
+          <span class="input-hint">Energy app → Since last charge</span>
+        </div>
+        <div class="input-group">
+          <label class="input-label">
+            kWh Used Since Last Charge
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Total energy consumed since last charge, in kilowatt-hours. Read from the Energy app before you plug in: <strong>Energy → Since last charge</strong>. Includes ALL energy used — driving AND phantom drain while parked.</span>
+            </span>
+          </label>
+          <input type="number" id="kwhUsed" placeholder="e.g. 45.2" min="0" max="200" step="0.1">
+          <span class="input-hint">Energy app → Since last charge</span>
+        </div>
+        <div class="input-group">
+          <label class="input-label">
+            Start Rated Miles
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">The <strong>estimated range in miles</strong> shown on the car's display right now, before charging starts. Find this on the main screen or energy app.</span>
+            </span>
+          </label>
+          <input type="number" id="startRatedMiles" placeholder="e.g. 18" min="0" max="600" step="1">
+          <span class="input-hint">Rated miles shown on the car now</span>
+        </div>
+        <div class="input-group">
+          <label class="input-label">
+            Start SOC %
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Battery percentage shown right now, before charging starts. Enter as a <strong>whole number</strong> (e.g., 7 for 7%). The car shows this on the main screen and in the Tesla app.</span>
+            </span>
+          </label>
+          <input type="number" id="startSOC" placeholder="e.g. 7" min="0" max="100" step="1">
+          <span class="input-hint">Battery % shown on the car now</span>
+        </div>
+      </div>
+
+      <div class="section-divider">After Charging Completes</div>
+      <div class="input-grid" style="margin-bottom:16px;">
+        <div class="input-group">
+          <label class="input-label">
+            End Rated Miles
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">The estimated range shown <strong>after charging is complete</strong>. Look at the main screen once the car stops charging — this is the BMS-reported range at your charge level.</span>
+            </span>
+          </label>
+          <input type="number" id="endRatedMiles" placeholder="e.g. 220" min="0" max="600" step="1">
+          <span class="input-hint">Rated miles shown after charge done</span>
+        </div>
+        <div class="input-group">
+          <label class="input-label">
+            End SOC %
+            <span class="tooltip-trigger">
+              <span class="tooltip-icon">?</span>
+              <span class="tooltip-box">Battery percentage <strong>after charging is complete</strong>. For example, if you charged to 90%, enter 90.</span>
+            </span>
+          </label>
+          <input type="number" id="endSOC" placeholder="e.g. 90" min="1" max="100" step="1">
+          <span class="input-hint">Battery % shown after charge done</span>
+        </div>
+      </div>
+
+      <!-- Optional inputs -->
+      <div class="optional-toggle" onclick="toggleOptional()">
+        <span class="toggle-arrow" id="toggleArrow">▶</span>
+        <strong>Optional: Drive / Park SOC Split</strong>
+        <span style="color:var(--text3);font-size:12px;">— enables full battery stack breakdown</span>
+      </div>
+      <div class="optional-section" id="optionalSection">
+        <div class="optional-note">
+          These inputs split energy between driving and parking. Enable a more detailed breakdown of where your kWh went. Find these by tracking your SOC % before and after each drive segment.
+        </div>
+        <div class="input-grid">
+          <div class="input-group">
+            <label class="input-label">
+              Drive SOC Consumed (decimal)
+              <span class="tooltip-trigger">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">The fraction of the battery consumed <strong>during driving only</strong>. For example, if SOC dropped from 90% to 7% while driving (83 percentage points), enter <strong>0.83</strong>. Do not include losses while parked.</span>
+              </span>
+            </label>
+            <input type="number" id="driveSOC" placeholder="e.g. 0.830" min="0" max="1" step="0.001">
+            <span class="input-hint">Decimal fraction (e.g. 0.830 for 83%)</span>
+          </div>
+          <div class="input-group">
+            <label class="input-label">
+              Parked SOC Loss (decimal)
+              <span class="tooltip-trigger">
+                <span class="tooltip-icon">?</span>
+                <span class="tooltip-box">The fraction of battery lost <strong>while parked</strong> between charges (phantom/vampire drain). For example, if SOC dropped 6 points while parked overnight, enter <strong>0.06</strong>.</span>
+              </span>
+            </label>
+            <input type="number" id="parkSOC" placeholder="e.g. 0.060" min="0" max="1" step="0.001">
+            <span class="input-hint">Decimal fraction (e.g. 0.060 for 6%)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Calculate button -->
+    <button class="calc-btn" onclick="calculate()">Calculate Battery Health</button>
+    <div class="error-msg" id="errorMsg"></div>
+
+    <!-- ── RESULTS ── -->
+    <div id="results">
+
+      <!-- Cycle quality note (shown if not large cycle) -->
+      <div id="cycleQualityNote" style="display:none;margin-top:16px;"></div>
+
+      <!-- Hero metrics -->
+      <div class="hero-grid" style="margin-top:16px;">
+        <div class="hero-card original">
+          <div class="hero-label">Original Pack</div>
+          <div class="hero-value" id="heroOriginal">— <span class="unit">kWh</span></div>
+          <div class="hero-sub" id="heroOriginalSub">Factory nominal capacity</div>
+        </div>
+        <div class="hero-card remaining">
+          <div class="hero-label">Estimated Remaining</div>
+          <div class="hero-value" id="heroRemaining">— <span class="unit">kWh</span></div>
+          <div class="hero-sub" id="heroRemainingSub">Observed full-pack estimate</div>
+        </div>
+        <div class="hero-card percentage">
+          <div class="hero-label">Pack Health</div>
+          <div class="hero-value" id="heroPct">—<span class="unit">%</span></div>
+          <div class="hero-sub" id="heroPctSub">of original capacity</div>
+        </div>
+      </div>
+
+      <!-- Battery gauge -->
+      <div class="gauge-card">
+        <div class="gauge-title">Capacity Gauge</div>
+        <div class="gauge-bar-wrap">
+          <div class="gauge-bg">
+            <div class="gauge-fill" id="gaugeFill" style="width:0%;">
+              <span class="gauge-fill-pct" id="gaugePct"></span>
+            </div>
+          </div>
+          <div class="gauge-threshold-line" id="thresholdLine" style="left:70%;">
+            <span class="gauge-threshold-label">70% warranty min</span>
+          </div>
+        </div>
+        <div class="gauge-scale">
+          <span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span>
+        </div>
+        <div class="warranty-status" id="warrantyStatus"></div>
+      </div>
+
+      <!-- Three method comparison -->
+      <div class="methods-grid">
+        <!-- Method 1: BMS -->
+        <div class="method-card">
+          <div class="method-name">BMS Display</div>
+          <div class="method-desc">Based on the rated range shown on your screen — Tesla's internal model of battery health.</div>
+          <div class="method-kwh" id="m1kwh">— <span class="unit">kWh</span></div>
+          <div class="method-pct" id="m1pct" style="color:var(--blue)"></div>
+          <div class="method-bar"><div class="method-bar-fill" id="m1bar" style="background:var(--blue);width:0%"></div></div>
+          <div class="method-threshold-note" id="m1note"></div>
+        </div>
+        <!-- Method 2: Observed (Primary) -->
+        <div class="method-card primary-method">
+          <div class="method-badge">Primary</div>
+          <div class="method-name">Observed</div>
+          <div class="method-desc">kWh consumed ÷ SOC window. Most conservative and directly measured. Best for warranty evaluation.</div>
+          <div class="method-kwh" id="m2kwh">— <span class="unit">kWh</span></div>
+          <div class="method-pct" id="m2pct" style="color:var(--accent)"></div>
+          <div class="method-bar"><div class="method-bar-fill" id="m2bar" style="background:var(--accent);width:0%"></div></div>
+          <div class="method-threshold-note" id="m2note"></div>
+        </div>
+        <!-- Method 3: Drive-adjusted -->
+        <div class="method-card" id="m3card">
+          <div class="method-name">Drive-Adjusted</div>
+          <div class="method-desc">Scales kWh by drive fraction, separating drive from park energy. Requires optional inputs.</div>
+          <div id="m3content">
+            <div class="method-na">Enter Drive &amp; Park SOC above to unlock</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Battery stack visual -->
+      <div class="stack-card">
+        <div class="stack-title">Where Did the <span id="stackPackLabel">75 kWh</span> Go?</div>
+        <div class="stack-subtitle">Color-coded breakdown of every kWh in the original pack. Values normalized to a full 100% SOC cycle.</div>
+        <div class="stack-wrapper">
+          <div class="battery-visual">
+            <div class="battery-terminal"></div>
+            <div class="battery-outer" id="batteryOuter"></div>
+            <div class="battery-label" id="batteryLabel">Full Pack</div>
+          </div>
+          <div class="stack-breakdown" id="stackBreakdown"></div>
+        </div>
+      </div>
+
+    </div><!-- /#results -->
+  </div><!-- /#tab-calculator -->
+
+  <!-- ── HOW IT WORKS TAB ── -->
+  <div id="tab-howto" class="tab-pane">
+    <div class="card">
+      <div class="how-section">
+        <h3>What This Calculator Does</h3>
+        <p>This tool estimates your Tesla battery's true usable capacity using data from your vehicle's own displays — no third-party hardware needed. It uses three different calculation methods, so you can see how they compare and understand the confidence level of each.</p>
+      </div>
+
+      <div class="how-section">
+        <h3>The Core Idea: SOC Window</h3>
+        <p>Every charge cycle tells you something. Between the end of your last charge and the start of this one, your battery moved from one state-of-charge (SOC) to another. That difference is the <strong>SOC window</strong>:</p>
+        <div class="formula-box">SOC Window = (Previous End SOC% − Current Start SOC%) ÷ 100<br><br>Example: 90% → 7% = 0.83 window (83% of the pack was consumed)</div>
+        <p>If you also know how many kWh the car consumed over that window, you can estimate what the full 100% pack would hold:</p>
+        <div class="formula-box">Observed Full-Pack Estimate = kWh Used ÷ SOC Window<br><br>Example: 42.5 kWh ÷ 0.83 = 51.2 kWh estimated full-pack capacity</div>
+        <p>Larger SOC windows (≥ 70%) give more accurate results because BMS percentage rounding errors (±1%) matter less relative to the larger window.</p>
+      </div>
+
+      <div class="how-section">
+        <h3>The Three Methods</h3>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Formula</th>
+              <th>What It Measures</th>
+              <th>Best For</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>BMS Display</strong></td>
+              <td>(End Miles ÷ End SOC%) × 100 ÷ Original Range × Nominal kWh</td>
+              <td>Tesla's internal model of the battery — what the computer thinks</td>
+              <td>Reference; tends to overstate real capacity</td>
+            </tr>
+            <tr>
+              <td><strong>Observed (Primary)</strong></td>
+              <td>kWh Used ÷ SOC Window</td>
+              <td>Actual energy delivered per SOC unit — driving + parked losses combined</td>
+              <td>Warranty evaluation; most conservative &amp; directly measurable</td>
+            </tr>
+            <tr>
+              <td><strong>Drive-Adjusted</strong></td>
+              <td>kWh Used ÷ Drive Fraction ÷ SOC Window</td>
+              <td>Isolates drive energy, then scales to full pack — requires optional inputs</td>
+              <td>Sensitivity analysis; typically 3–5 kWh higher than Observed</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>The Observed method is the <strong>primary metric</strong> because it requires no subjective split between driving and parking — it uses only what the car's displays show directly.</p>
+      </div>
+
+      <div class="how-section">
+        <h3>Battery Stack Breakdown</h3>
+        <p>The color-coded battery visual shows where every kWh of the original nominal pack went. Think of the full bar as "100% of what the battery was designed to hold."</p>
+        <table class="data-table">
+          <thead>
+            <tr><th>Color</th><th>Component</th><th>What It Means</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><span class="color-swatch" style="background:#5db84a"></span>Drive</td><td>Drive Energy</td><td>kWh actually used to move the car</td></tr>
+            <tr><td><span class="color-swatch" style="background:#4a8fd4"></span>Park</td><td>Parked Standby Loss</td><td>Energy lost while the car sat idle (vampire drain)</td></tr>
+            <tr><td><span class="color-swatch" style="background:#d4a017"></span>Phantom</td><td>SOC Reconciliation</td><td>Gap between logged Drive+Park SOC and observed window — near zero is normal</td></tr>
+            <tr><td><span class="color-swatch" style="background:#7a8498"></span>Uncharged</td><td>SOC Not Accessed</td><td>Portion of pack left unused this cycle (e.g., if you stopped at 7% instead of 0%)</td></tr>
+            <tr><td><span class="color-swatch" style="background:#e03535"></span>Degradation</td><td>Lost Capacity</td><td>Capacity that no longer exists — gone due to battery aging</td></tr>
+          </tbody>
+        </table>
+        <p>Without the optional Drive/Park SOC inputs, Drive and Park are shown combined as "Energy Used."</p>
+      </div>
+
+      <div class="how-section">
+        <h3>Cycle Quality</h3>
+        <p>Not every cycle produces equally reliable results:</p>
+        <ul>
+          <li><strong>≥ 70% SOC window:</strong> Large qualifying cycle — most reliable. BMS rounding errors are small relative to the window.</li>
+          <li><strong>50–69% SOC window:</strong> Moderate reliability — usable but has slightly higher uncertainty.</li>
+          <li><strong>Below 50%:</strong> Too small for a reliable estimate — the 1% BMS rounding creates too much relative error.</li>
+        </ul>
+      </div>
+
+      <div class="how-section">
+        <h3>Warranty Context</h3>
+        <p>Tesla's battery warranty for most models guarantees at least <strong>70% of original capacity</strong> for 8 years or 150,000 miles. For a 75 kWh pack, the threshold is <strong>52.5 kWh</strong>. If your Observed estimate consistently falls below this threshold, you may have grounds to request a formal battery evaluation from Tesla before your warranty expires.</p>
+        <p>This tool does not replace Tesla's official diagnostic — it helps you document consistent, reproducible evidence using your car's own data.</p>
+      </div>
+
+      <div class="how-section">
+        <h3>Important Caveats</h3>
+        <ul>
+          <li>All estimates use the BMS's 1% SOC granularity — inherent uncertainty of ±0.5–1 kWh.</li>
+          <li>The Observed method assumes Tesla's kWh display includes ALL energy since last charge (driving + parked). This is our best understanding, but not officially confirmed.</li>
+          <li>Temperature, driving style, and short trips affect efficiency — not capacity. These methods measure delivered capacity, not efficiency.</li>
+          <li>A single cycle result is less meaningful than an average across many large cycles.</li>
+        </ul>
+      </div>
+    </div>
+  </div><!-- /#tab-howto -->
+
+</div><!-- /.main -->
+
+<script>
+// ── Vehicle database ──
+const VEHICLES = {
+  m3p_2018: { pack: 75, range: 310 },
+  m3lr_awd: { pack: 75, range: 353 },
+  m3lr_rwd: { pack: 75, range: 322 },
+  m3sr:     { pack: 54, range: 240 },
+  m3rwd23:  { pack: 60, range: 272 },
+  mylr:     { pack: 75, range: 330 },
+  myp:      { pack: 75, range: 303 },
+  ms85:     { pack: 85, range: 265 },
+  ms100:    { pack: 100, range: 335 },
+  mslrp:    { pack: 100, range: 405 },
+  msplaid:  { pack: 100, range: 396 },
+  mx100:    { pack: 100, range: 295 },
+  mxlrp:    { pack: 100, range: 371 },
+  custom:   { pack: null, range: null },
+};
+
+const WARRANTY_PCT = 0.70;
+
+function getVehicleParams() {
+  const sel = document.getElementById('vehicleSelect').value;
+  if (sel === 'custom') {
+    const pack = parseFloat(document.getElementById('customPack').value);
+    const range = parseFloat(document.getElementById('customRange').value);
+    return { pack: isNaN(pack) ? null : pack, range: isNaN(range) ? null : range };
+  }
+  return VEHICLES[sel];
+}
+
+function onVehicleChange() {
+  const sel = document.getElementById('vehicleSelect').value;
+  const isCustom = sel === 'custom';
+  document.getElementById('customFields').style.display = isCustom ? 'grid' : 'none';
+  updateChips();
+}
+
+function updateChips() {
+  const v = getVehicleParams();
+  if (!v || !v.pack) return;
+  document.getElementById('chipPack').textContent = v.pack + ' kWh';
+  document.getElementById('chipRange').textContent = v.range + ' mi';
+  document.getElementById('chipWarranty').textContent = (v.pack * WARRANTY_PCT).toFixed(1) + ' kWh';
+  document.getElementById('chipEfficiency').textContent = Math.round(v.pack * 1000 / v.range) + ' Wh/mi';
+}
+
+// ── Tab switching ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', ['calculator','howto'][i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Optional section toggle ──
+function toggleOptional() {
+  const sec = document.getElementById('optionalSection');
+  const arrow = document.getElementById('toggleArrow');
+  const open = sec.classList.toggle('open');
+  arrow.classList.toggle('open', open);
+}
+
+// ── Color helper ──
+function pctColor(pct) {
+  if (pct >= 0.80) return '#5db84a';
+  if (pct >= 0.70) return '#d4a017';
+  return '#e03535';
+}
+
+function fmt1(n) { return n.toFixed(1); }
+function fmt2(n) { return n.toFixed(2); }
+function fmtPct(n) { return (n * 100).toFixed(1) + '%'; }
+
+// ── Main calculation ──
+function calculate() {
+  const errEl = document.getElementById('errorMsg');
+  errEl.style.display = 'none';
+
+  const v = getVehicleParams();
+  if (!v || !v.pack || !v.range) {
+    showError('Please select a vehicle or enter custom pack size and rated range.');
+    return;
+  }
+
+  const nominalPack = v.pack;
+  const origRange   = v.range;
+  const threshold   = nominalPack * WARRANTY_PCT;
+
+  const prevEndSOC   = parseFloat(document.getElementById('prevEndSOC').value);
+  const startMiles   = parseFloat(document.getElementById('startRatedMiles').value);
+  const startSOC     = parseFloat(document.getElementById('startSOC').value);
+  const endMiles     = parseFloat(document.getElementById('endRatedMiles').value);
+  const endSOC       = parseFloat(document.getElementById('endSOC').value);
+  const milesDriven  = parseFloat(document.getElementById('milesDriven').value);
+  const kwhUsed      = parseFloat(document.getElementById('kwhUsed').value);
+  const driveSOCIn   = parseFloat(document.getElementById('driveSOC').value);
+  const parkSOCIn    = parseFloat(document.getElementById('parkSOC').value);
+
+  // Validate required fields
+  const required = [
+    [prevEndSOC, 'Previous Charge End SOC%'],
+    [startSOC,   'Start SOC%'],
+    [endMiles,   'End Rated Miles'],
+    [endSOC,     'End SOC%'],
+    [milesDriven,'Miles Driven'],
+    [kwhUsed,    'kWh Used'],
+  ];
+  for (const [val, name] of required) {
+    if (isNaN(val)) { showError(`Please enter ${name}.`); return; }
+  }
+  if (isNaN(startMiles) && !isNaN(startSOC)) {
+    // startMiles optional but helpful — let it pass
+  }
+  if (endSOC <= 0) { showError('End SOC% must be greater than 0.'); return; }
+  if (kwhUsed <= 0) { showError('kWh Used must be greater than 0.'); return; }
+
+  // ── Core calcs ──
+  const socWindow = (prevEndSOC - startSOC) / 100;
+  const isLarge   = socWindow >= 0.70;
+  const isValid   = socWindow >= 0.50;
+
+  // BMS method
+  const bmsFullRange  = (endMiles / endSOC) * 100;
+  const bmsPct        = bmsFullRange / origRange;
+  const bmsKwh        = bmsPct * nominalPack;
+
+  // Observed primary (only if SOC window >= 0.5)
+  let obsKwh = null, obsPct = null;
+  if (isValid && socWindow > 0) {
+    obsKwh = kwhUsed / socWindow;
+    obsPct = obsKwh / nominalPack;
+  }
+
+  // Drive-adjusted (only with optional inputs + valid cycle)
+  const hasOptional = !isNaN(driveSOCIn) && !isNaN(parkSOCIn) && driveSOCIn > 0;
+  let driveAdj = null;
+  let stackData = null;
+
+  if (hasOptional) {
+    const driveParkTotal = driveSOCIn + parkSOCIn;
+    const driveFrac      = driveSOCIn / driveParkTotal;
+    if (isValid) {
+      const daKwh = kwhUsed / driveFrac / socWindow;
+      driveAdj = { kwh: daKwh, pct: daKwh / nominalPack };
+    }
+    // Stack breakdown (full detail)
+    const driveKwh    = kwhUsed;
+    const parkKwh     = kwhUsed * (parkSOCIn / driveSOCIn);
+    const phantomKwh  = (socWindow - driveParkTotal) * (kwhUsed / driveSOCIn);
+    const unchargedKwh = Math.max(0, (1 - socWindow) * (kwhUsed / driveSOCIn));
+    const degradKwh   = nominalPack - driveKwh - parkKwh - Math.max(0, phantomKwh) - unchargedKwh;
+
+    stackData = {
+      detailed: true,
+      drive:    { kwh: driveKwh,    pct: driveKwh / nominalPack,    color: '#5db84a', label: 'Drive',    sub: 'Energy used to move the car' },
+      park:     { kwh: parkKwh,     pct: parkKwh / nominalPack,     color: '#4a8fd4', label: 'Park',     sub: 'Vampire / standby drain' },
+      phantom:  { kwh: Math.max(0, phantomKwh), pct: Math.max(0, phantomKwh) / nominalPack, color: '#d4a017', label: 'Phantom', sub: 'SOC reconciliation gap' },
+      uncharged:{ kwh: unchargedKwh, pct: unchargedKwh / nominalPack, color: '#7a8498', label: 'Uncharged', sub: 'SOC not accessed this cycle' },
+      degrad:   { kwh: Math.max(0, degradKwh), pct: Math.max(0, degradKwh) / nominalPack, color: '#e03535', label: 'Degradation', sub: 'Lost capacity (aging)' },
+    };
+  } else {
+    // Simplified stack using observed method
+    if (isValid) {
+      const usedKwh      = kwhUsed;
+      const unchargedKwh = Math.max(0, (1 - socWindow) * obsKwh);
+      const degradKwh    = Math.max(0, nominalPack - obsKwh);
+      stackData = {
+        detailed: false,
+        used:     { kwh: usedKwh,      pct: usedKwh / nominalPack,      color: '#5db84a', label: 'Energy Used', sub: 'Drive + park combined' },
+        uncharged:{ kwh: unchargedKwh, pct: unchargedKwh / nominalPack, color: '#7a8498', label: 'Uncharged',   sub: 'SOC not accessed this cycle' },
+        degrad:   { kwh: degradKwh,    pct: degradKwh / nominalPack,    color: '#e03535', label: 'Degradation', sub: 'Estimated lost capacity' },
+      };
+    }
+  }
+
+  // ── Determine primary display capacity ──
+  const primaryKwh = obsKwh !== null ? obsKwh : bmsKwh;
+  const primaryPct = primaryKwh / nominalPack;
+
+  // ── Render ──
+  renderResults({
+    nominalPack, origRange, threshold,
+    socWindow, isLarge, isValid,
+    bmsKwh, bmsPct,
+    obsKwh, obsPct,
+    driveAdj,
+    primaryKwh, primaryPct,
+    stackData,
+    milesDriven, kwhUsed,
+  });
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function renderResults(d) {
+  const {
+    nominalPack, origRange, threshold,
+    socWindow, isLarge, isValid,
+    bmsKwh, bmsPct,
+    obsKwh, obsPct,
+    driveAdj,
+    primaryKwh, primaryPct,
+    stackData,
+  } = d;
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Cycle quality note
+  const noteEl = document.getElementById('cycleQualityNote');
+  if (!isValid) {
+    noteEl.style.display = 'flex';
+    noteEl.className = 'validity-note';
+    noteEl.innerHTML = `⚠ <span>SOC window is <strong>${fmtPct(socWindow)}</strong> — below the 50% minimum for reliable capacity estimates. The Observed method is not available. Using BMS data only. For best results, use a cycle where you discharge ≥ 50% of the battery between charges.</span>`;
+  } else if (!isLarge) {
+    noteEl.style.display = 'flex';
+    noteEl.className = 'validity-note';
+    noteEl.innerHTML = `ℹ <span>SOC window is <strong>${fmtPct(socWindow)}</strong> — moderate reliability (50–70% range). Results are usable but less precise than a large cycle (≥ 70% window). For best accuracy, try a cycle from near-full to near-empty.</span>`;
+  } else {
+    noteEl.style.display = 'none';
+  }
+
+  // Hero
+  document.getElementById('heroOriginal').innerHTML = fmt1(nominalPack) + ' <span class="unit">kWh</span>';
+  document.getElementById('heroOriginalSub').textContent = `Factory nominal capacity`;
+
+  if (obsKwh !== null) {
+    document.getElementById('heroRemaining').innerHTML = fmt2(obsKwh) + ' <span class="unit">kWh</span>';
+    document.getElementById('heroRemaining').style.color = pctColor(obsPct);
+    document.getElementById('heroRemainingSub').textContent = `Observed estimate (SOC window ${fmtPct(socWindow)})`;
+    document.getElementById('heroPct').innerHTML = (obsPct * 100).toFixed(1) + '<span class="unit">%</span>';
+    document.getElementById('heroPct').style.color = pctColor(obsPct);
+    document.getElementById('heroPctSub').textContent = obsPct < 0.70 ? '⚠ Below warranty threshold' : obsPct < 0.80 ? 'Approaching threshold' : 'Within warranty range';
+  } else {
+    document.getElementById('heroRemaining').innerHTML = fmt2(bmsKwh) + ' <span class="unit">kWh</span>';
+    document.getElementById('heroRemaining').style.color = pctColor(bmsPct);
+    document.getElementById('heroRemainingSub').textContent = 'BMS-implied estimate (cycle too small for Observed)';
+    document.getElementById('heroPct').innerHTML = (bmsPct * 100).toFixed(1) + '<span class="unit">%</span>';
+    document.getElementById('heroPct').style.color = pctColor(bmsPct);
+    document.getElementById('heroPctSub').textContent = 'BMS method only';
+  }
+
+  // Gauge
+  const gaugePct = Math.min(primaryPct, 1.0);
+  const gaugeFill = document.getElementById('gaugeFill');
+  setTimeout(() => {
+    gaugeFill.style.width = (gaugePct * 100) + '%';
+    gaugeFill.style.background = `linear-gradient(90deg, ${pctColor(primaryPct)}aa, ${pctColor(primaryPct)})`;
+  }, 50);
+  document.getElementById('gaugePct').textContent = fmtPct(primaryPct);
+  document.getElementById('thresholdLine').style.left = '70%';
+
+  // Warranty status
+  const wsEl = document.getElementById('warrantyStatus');
+  const gap  = primaryKwh - threshold;
+  if (!isValid) {
+    wsEl.className = 'warranty-status warn';
+    wsEl.innerHTML = `<span class="status-icon">ℹ</span> Cycle too small for Observed estimate — use a larger discharge cycle for warranty evaluation.`;
+  } else if (primaryKwh < threshold) {
+    wsEl.className = 'warranty-status fail';
+    wsEl.innerHTML = `<span class="status-icon">✗</span> <strong>${fmt2(Math.abs(gap))} kWh below</strong> the ${fmtPct(WARRANTY_PCT)} warranty threshold of ${fmt1(threshold)} kWh. This cycle suggests capacity may be below the warranty minimum.`;
+  } else if (primaryKwh < threshold * 1.05) {
+    wsEl.className = 'warranty-status warn';
+    wsEl.innerHTML = `<span class="status-icon">⚠</span> Only <strong>${fmt2(gap)} kWh above</strong> the ${fmtPct(WARRANTY_PCT)} threshold. Consider tracking multiple cycles to confirm.`;
+  } else {
+    wsEl.className = 'warranty-status pass';
+    wsEl.innerHTML = `<span class="status-icon">✓</span> <strong>${fmt2(gap)} kWh above</strong> the ${fmtPct(WARRANTY_PCT)} warranty threshold of ${fmt1(threshold)} kWh.`;
+  }
+
+  // Method 1: BMS
+  document.getElementById('m1kwh').innerHTML = fmt2(bmsKwh) + ' <span class="unit">kWh</span>';
+  document.getElementById('m1pct').textContent = fmtPct(bmsPct) + ' of nominal';
+  document.getElementById('m1pct').style.color = pctColor(bmsPct);
+  setTimeout(() => { document.getElementById('m1bar').style.width = Math.min(bmsPct * 100, 100) + '%'; }, 100);
+  document.getElementById('m1note').textContent = `${fmt2(bmsKwh - threshold)} kWh vs. warranty min (${fmt1(threshold)} kWh)`;
+
+  // Method 2: Observed
+  if (obsKwh !== null) {
+    document.getElementById('m2kwh').innerHTML = fmt2(obsKwh) + ' <span class="unit">kWh</span>';
+    document.getElementById('m2kwh').style.color = pctColor(obsPct);
+    document.getElementById('m2pct').textContent = fmtPct(obsPct) + ' of nominal';
+    document.getElementById('m2pct').style.color = pctColor(obsPct);
+    setTimeout(() => { document.getElementById('m2bar').style.width = Math.min(obsPct * 100, 100) + '%'; }, 150);
+    const obsGap = obsKwh - threshold;
+    document.getElementById('m2note').textContent = `${fmt2(obsGap)} kWh vs. warranty min (${fmt1(threshold)} kWh)`;
+    document.getElementById('m2bar').style.background = pctColor(obsPct);
+  } else {
+    document.getElementById('m2kwh').innerHTML = '<span style="font-size:16px;color:var(--text3)">SOC window too small</span>';
+    document.getElementById('m2pct').textContent = '';
+    document.getElementById('m2note').textContent = 'Use a ≥ 50% SOC window for this method';
+  }
+
+  // Method 3: Drive-adjusted
+  const m3content = document.getElementById('m3content');
+  if (driveAdj && isValid) {
+    const daC = pctColor(driveAdj.pct);
+    m3content.innerHTML = `
+      <div class="method-kwh" style="color:${daC}">${fmt2(driveAdj.kwh)} <span class="unit">kWh</span></div>
+      <div class="method-pct" style="color:${daC}">${fmtPct(driveAdj.pct)} of nominal</div>
+      <div class="method-bar"><div class="method-bar-fill" id="m3bar" style="background:${daC};width:0%"></div></div>
+      <div class="method-threshold-note">${fmt2(driveAdj.kwh - threshold)} kWh vs. warranty min</div>
+    `;
+    setTimeout(() => {
+      const b = document.getElementById('m3bar');
+      if (b) b.style.width = Math.min(driveAdj.pct * 100, 100) + '%';
+    }, 200);
+  } else if (!driveAdj && isValid) {
+    m3content.innerHTML = '<div class="method-na">Enter Drive &amp; Park SOC above to unlock</div>';
+  } else {
+    m3content.innerHTML = '<div class="method-na">SOC window too small for this method</div>';
+  }
+
+  // Stack pack label
+  document.getElementById('stackPackLabel').textContent = fmt1(nominalPack) + ' kWh';
+
+  // Battery visual + breakdown
+  renderStack(stackData, nominalPack, primaryPct);
+}
+
+function renderStack(stackData, nominalPack, primaryPct) {
+  const battOuter = document.getElementById('batteryOuter');
+  const breakdown = document.getElementById('stackBreakdown');
+  battOuter.innerHTML = '';
+  breakdown.innerHTML = '';
+
+  if (!stackData) {
+    breakdown.innerHTML = '<div style="color:var(--text3);font-size:13px;padding:20px 0;">Cycle too small for stack breakdown (need ≥ 50% SOC window)</div>';
+    return;
+  }
+
+  const segments = stackData.detailed
+    ? ['degrad','uncharged','phantom','park','drive'].map(k => stackData[k])
+    : ['degrad','uncharged','used'].map(k => stackData[k]);
+
+  // Filter out zero-ish segments
+  const nonZero = segments.filter(s => s && s.kwh > 0.05);
+  const total = nonZero.reduce((a, s) => a + s.kwh, 0);
+
+  // Battery visual segments: column flex, so first-appended = top.
+  // Order [degrad, uncharged, phantom, park, drive] → red at top, green at bottom.
+  nonZero.forEach(seg => {
+    const heightPct = (seg.kwh / nominalPack) * 100;
+    const div = document.createElement('div');
+    div.className = 'battery-segment';
+    div.style.height = heightPct + '%';
+    div.style.background = seg.color;
+    div.title = `${seg.label}: ${seg.kwh.toFixed(1)} kWh`;
+    battOuter.appendChild(div);
+  });
+
+  document.getElementById('batteryLabel').textContent = (primaryPct * 100).toFixed(0) + '% capacity';
+
+  // Breakdown rows — yellow (phantom) above blue (park) to match battery visual
+  const displayOrder = stackData.detailed
+    ? ['drive','phantom','park','uncharged','degrad']
+    : ['used','uncharged','degrad'];
+
+  displayOrder.forEach(key => {
+    const seg = stackData[key];
+    if (!seg || seg.kwh < 0.01) return;
+
+    const row = document.createElement('div');
+    row.innerHTML = `
+      <div class="stack-row">
+        <div class="stack-color-dot" style="background:${seg.color}"></div>
+        <div><span class="stack-component-name">${seg.label}</span><span class="stack-component-sub">${seg.sub}</span></div>
+        <div class="stack-kwh" style="color:${seg.color}">${seg.kwh.toFixed(1)} kWh</div>
+        <div class="stack-pct">${(seg.pct * 100).toFixed(1)}%</div>
+      </div>
+      <div class="stack-bar-row">
+        <div class="stack-bar-fill" style="background:${seg.color};width:0%;transition:width 0.7s ease" data-target="${(seg.pct * 100).toFixed(1)}"></div>
+      </div>
+    `;
+    breakdown.appendChild(row);
+  });
+
+  // Total row
+  const totalRow = document.createElement('div');
+  totalRow.className = 'stack-total-row';
+  totalRow.innerHTML = `
+    <div class="stack-total-label">Nominal Pack Total</div>
+    <div class="stack-total-val">${nominalPack.toFixed(1)} kWh</div>
+  `;
+  breakdown.appendChild(totalRow);
+
+  // Animate stack bars
+  setTimeout(() => {
+    breakdown.querySelectorAll('.stack-bar-fill').forEach(b => {
+      b.style.width = b.dataset.target + '%';
+    });
+  }, 200);
+}
+
+// Init
+updateChips();
+</script>
+</body>
+</html>
